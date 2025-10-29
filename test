@@ -1,0 +1,68 @@
+# Import necessary libraries
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+import pandas as pd
+
+# Define the Ramberg-Osgood equation
+# This is a common model for describing the nonlinear elastic behavior of materials
+# sigma = E * epsilon + (sigma_y / K) * (epsilon / epsilon_y)^n
+
+def ramberg_osgood_equation(epsilon, E, sigma_y, K, n):
+    epsilon_y = sigma_y / E  # Yield strain
+    return E * epsilon + (sigma_y / K) * (epsilon / epsilon_y) ** n
+
+# Load stress-strain data from Excel file
+# Assuming the Excel file has two columns: 'Strain' and 'Stress'
+try:
+    # Read the Excel file (update the filename as needed)
+    df = pd.read_excel('S-S curve @150℃ of Shougang 35SWYS900.xlsx')
+    
+    # Extract strain and stress data (A column for Strain, B column for Stress)
+    strain_data = df.iloc[:, 0].values  # A column
+    stress_data = df.iloc[:, 1].values  # B column
+    
+    # Convert strain from percentage to decimal (divide by 100)
+    strain_data = strain_data / 100
+    
+    # Optional: Filter data within a specific range if needed
+    # For example, only use data where strain is between 0 and 0.1
+    # mask = (strain_data >= 0) & (strain_data <= 0.1)
+    # strain_data = strain_data[mask]
+    # stress_data = stress_data[mask]
+    
+    # Initial guess for parameters
+    initial_guess = [200000, 400, 1000, 0.2]  # E, sigma_y, K, n
+
+    # Perform curve fitting
+    popt, pcov = curve_fit(ramberg_osgood_equation, strain_data, stress_data, p0=initial_guess)
+    
+    # Extract fitted parameters
+    E_fitted, sigma_y_fitted, K_fitted, n_fitted = popt
+    print(f"Fitted Parameters:
+E = {E_fitted:.2f} MPa
+sigma_y = {sigma_y_fitted:.2f} MPa
+K = {K_fitted:.2f}
+n = {n_fitted:.4f}")
+    
+    # Generate fitted curve for plotting
+    strain_fit = np.linspace(strain_data.min(), strain_data.max(), 100)
+    stress_fit = ramberg_osgood_equation(strain_fit, *popt)
+    
+    # Plot original data and fitted curve
+    plt.figure(figsize=(10, 6))
+    plt.scatter(strain_data, stress_data, color='red', label='Original Data')
+    plt.plot(strain_fit, stress_fit, color='blue', label='Fitted Curve')
+    plt.xlabel('Strain')
+    plt.ylabel('Stress (MPa)')
+    plt.title('Ramberg-Osgood Fitting')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    
+except FileNotFoundError:
+    print("Excel file not found. Please make sure 'S-S curve @150℃ of Shougang 35SWYS900.xlsx' exists in the working directory.")
+except Exception as e:
+    print(f"Error during processing: {e}")
+    print("Please ensure your Excel file has data in the first two columns (A and B).")
+</artifact>
